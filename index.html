@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SMS en Français</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #EFE6D0;
+    --ink: #24304A;
+    --bordeaux: #8C2F39;
+    --bordeaux-dark: #6F232B;
+    --gold: #B8935F;
+    --cream-card: #FBF7EE;
+    --line: #D9CBA9;
+    --muted: #7a725f;
+    --sent-bg: #8C2F39;
+    --sent-text: #FBF3E7;
+    --received-bg: #FBF7EE;
+    --received-text: #24304A;
+    --radius: 16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Inter', sans-serif;
+    background:
+      radial-gradient(circle at 20% 10%, rgba(140,47,57,0.05), transparent 40%),
+      radial-gradient(circle at 80% 90%, rgba(184,147,95,0.08), transparent 40%),
+      var(--paper);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    color:var(--ink);
+  }
+  .app{
+    width:100%;
+    max-width:480px;
+    height:min(88vh, 820px);
+    background:var(--cream-card);
+    border-radius:28px;
+    box-shadow: 0 30px 60px -20px rgba(36,48,74,0.35), 0 0 0 1px rgba(36,48,74,0.06);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    position:relative;
+  }
+  /* header */
+  .chat-header{
+    background:var(--ink);
+    color:var(--cream-card);
+    padding:16px 18px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    border-bottom: 3px solid var(--bordeaux);
+  }
+  .avatar{
+    width:42px;height:42px;border-radius:50%;
+    background:var(--bordeaux);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:17px;
+    flex-shrink:0;
+  }
+  .header-text{flex:1; min-width:0;}
+  .header-text .name{
+    font-family:'Fraunces', serif;
+    font-size:19px;
+    font-weight:600;
+    line-height:1.1;
+  }
+  .header-text .status{
+    font-size:12px;
+    color:var(--gold);
+    font-family:'IBM Plex Mono', monospace;
+    letter-spacing:0.02em;
+  }
+  .icon-btn{
+    background:none;border:none;color:var(--cream-card);
+    cursor:pointer; padding:6px; opacity:0.85; border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .icon-btn:hover{opacity:1; background:rgba(255,255,255,0.08);}
+
+  /* messages */
+  .messages{
+    flex:1;
+    overflow-y:auto;
+    padding:18px 14px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    background-image: linear-gradient(var(--line) 1px, transparent 1px);
+    background-size: 100% 28px;
+    background-position: 0 8px;
+  }
+  .bubble-row{display:flex; margin:4px 0;}
+  .bubble-row.sent{justify-content:flex-end;}
+  .bubble-row.received{justify-content:flex-start;}
+  .bubble{
+    max-width:78%;
+    padding:10px 14px;
+    border-radius:18px;
+    font-size:15px;
+    line-height:1.42;
+    box-shadow: 0 1px 2px rgba(36,48,74,0.08);
+  }
+  .bubble.sent{
+    background:var(--sent-bg);
+    color:var(--sent-text);
+    border-bottom-right-radius:4px;
+    cursor:pointer;
+    display:flex; align-items:center; gap:8px;
+  }
+  .bubble.received{
+    background:var(--received-bg);
+    color:var(--received-text);
+    border:1px solid var(--line);
+    border-bottom-left-radius:4px;
+    cursor:pointer;
+    display:flex; align-items:center; gap:8px;
+  }
+  .bubble:active{opacity:0.85;}
+  .speak-icon{
+    flex-shrink:0;
+    width:16px; height:16px;
+    opacity:0.55;
+  }
+  .bubble.sent .speak-icon{color:var(--sent-text);}
+  .bubble.received .speak-icon{color:var(--bordeaux);}
+  .bubble.speaking .speak-icon{opacity:1;}
+  .bubble-text{flex:1;}
+  .translation{
+    font-size:12.5px;
+    color:var(--muted);
+    margin-top:6px;
+    font-style:italic;
+    cursor:pointer;
+    text-decoration:underline dotted;
+    display:inline-block;
+  }
+
+  /* correction receipt */
+  .receipt-wrap{
+    display:flex;
+    justify-content:flex-end;
+    margin:2px 0 8px;
+  }
+  .receipt{
+    max-width:78%;
+    background: repeating-linear-gradient(#fffdf8, #fffdf8 27px, #f1e9d8 28px);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 10px 14px 12px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--ink);
+    position:relative;
+    box-shadow: 0 2px 6px rgba(36,48,74,0.1);
+  }
+  .receipt::before{
+    content:"";
+    position:absolute;
+    top:-6px; left:0; right:0; height:6px;
+    background:
+      radial-gradient(circle at 6px 6px, transparent 4px, #fffdf8 4.5px) repeat-x;
+    background-size: 12px 12px;
+  }
+  .receipt-title{
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--bordeaux);
+    font-weight:500;
+    font-size:10.5px;
+    margin-bottom:6px;
+    border-bottom:1px dashed var(--line);
+    padding-bottom:5px;
+  }
+  .receipt-item{margin:5px 0;}
+  .receipt-item .orig{color:#a04a52; text-decoration:line-through; opacity:0.8;}
+  .receipt-item .fix{color:var(--ink); font-weight:500;}
+  .receipt-item .note{display:block; color:var(--muted); font-size:11px; margin-top:1px;}
+  .receipt-empty{color:var(--muted); font-style:italic;}
+
+  .typing-row{display:flex; padding:2px 0 8px 4px;}
+  .typing-dots{
+    background:var(--received-bg);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:10px 14px;
+    display:flex; gap:4px;
+  }
+  .typing-dots span{
+    width:6px;height:6px;border-radius:50%;
+    background:var(--muted);
+    animation: blink 1.2s infinite;
+  }
+  .typing-dots span:nth-child(2){animation-delay:0.2s;}
+  .typing-dots span:nth-child(3){animation-delay:0.4s;}
+  @keyframes blink{0%,80%,100%{opacity:0.25;} 40%{opacity:1;}}
+
+  /* composer */
+  .composer{
+    display:flex;
+    gap:8px;
+    padding:12px;
+    border-top:1px solid var(--line);
+    background:var(--cream-card);
+  }
+  .composer textarea{
+    flex:1;
+    resize:none;
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:10px 16px;
+    font-family:'Inter', sans-serif;
+    font-size:14.5px;
+    max-height:90px;
+    outline:none;
+    background:#fff;
+  }
+  .composer textarea:focus{border-color:var(--bordeaux);}
+  .send-btn{
+    background:var(--bordeaux);
+    color:var(--sent-text);
+    border:none;
+    border-radius:50%;
+    width:42px; height:42px;
+    flex-shrink:0;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition: background 0.15s;
+  }
+  .send-btn:hover{background:var(--bordeaux-dark);}
+  .send-btn:disabled{opacity:0.4; cursor:default;}
+
+  /* settings panel */
+  .settings-panel{
+    position:absolute; inset:0;
+    background:var(--cream-card);
+    z-index:5;
+    display:flex; flex-direction:column;
+  }
+  .settings-panel[hidden]{display:none;}
+  .settings-header{
+    background:var(--ink); color:var(--cream-card);
+    padding:16px 18px;
+    display:flex; align-items:center; gap:10px;
+    border-bottom:3px solid var(--bordeaux);
+    font-family:'Fraunces', serif; font-size:18px; font-weight:600;
+  }
+  .settings-body{padding:20px; overflow-y:auto; flex:1;}
+  .field{margin-bottom:16px;}
+  .field label{
+    display:block; font-size:12px; text-transform:uppercase;
+    letter-spacing:0.06em; color:var(--muted); margin-bottom:5px;
+    font-family:'IBM Plex Mono', monospace;
+  }
+  .field input, .field select, .field textarea{
+    width:100%; padding:9px 12px; border:1px solid var(--line);
+    border-radius:10px; font-size:14px; font-family:'Inter',sans-serif;
+    background:#fff;
+  }
+  .field textarea{resize:vertical; min-height:50px;}
+  .field-hint{font-size:11.5px; color:var(--muted); margin-top:4px;}
+  .save-btn{
+    width:100%; padding:12px; background:var(--bordeaux); color:var(--sent-text);
+    border:none; border-radius:12px; font-size:14.5px; font-weight:500; cursor:pointer;
+    font-family:'Inter',sans-serif;
+  }
+  .save-btn:hover{background:var(--bordeaux-dark);}
+  .reset-link{
+    display:block; text-align:center; margin-top:14px; font-size:12.5px;
+    color:var(--muted); cursor:pointer; text-decoration:underline;
+  }
+  .conn-status{font-size:12px; margin-top:6px; font-family:'IBM Plex Mono',monospace;}
+  .conn-status.ok{color:#3a7d44;}
+  .conn-status.bad{color:var(--bordeaux);}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="chat-header">
+    <div class="avatar" id="avatarInitial">A</div>
+    <div class="header-text">
+      <div class="name" id="personaName">Amélie</div>
+      <div class="status" id="levelStatus">niveau A2 · en ligne</div>
+    </div>
+    <button class="icon-btn" id="openSettingsBtn" title="Réglages">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+    </button>
+  </div>
+
+  <div class="messages" id="messages"></div>
+
+  <div class="composer">
+    <textarea id="input" rows="1" placeholder="Écris en français…"></textarea>
+    <button class="send-btn" id="sendBtn" title="Envoyer">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+    </button>
+  </div>
+
+  <!-- settings -->
+  <div class="settings-panel" id="settingsPanel" hidden>
+    <div class="settings-header">
+      <button class="icon-btn" id="closeSettingsBtn" style="margin-left:-6px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      </button>
+      Réglages
+    </div>
+    <div class="settings-body">
+      <div class="field">
+        <label>Adresse Ollama</label>
+        <input type="text" id="endpointInput" placeholder="http://localhost:11434">
+        <div class="conn-status" id="connStatus"></div>
+      </div>
+      <div class="field">
+        <label>Modèle</label>
+        <input type="text" id="modelInput" placeholder="llama3.1">
+        <div class="field-hint">Doit être installé via `ollama pull`. Ex : llama3.1, mistral, qwen2.5:7b</div>
+      </div>
+      <div class="field">
+        <label>Ton correspondant</label>
+        <input type="text" id="personaInput" placeholder="Amélie, une barista parisienne">
+      </div>
+      <div class="field">
+        <label>Niveau (CECRL)</label>
+        <select id="levelInput">
+          <option value="A1">A1 — débutant</option>
+          <option value="A2">A2 — élémentaire</option>
+          <option value="B1">B1 — intermédiaire</option>
+          <option value="B2">B2 — intermédiaire avancé</option>
+          <option value="C1">C1 — avancé</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Formalité</label>
+        <select id="formalityInput">
+          <option value="tu">Tutoiement (tu)</option>
+          <option value="vous">Vouvoiement (vous)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Voix (lecture audio)</label>
+        <select id="voiceInput">
+          <option value="">Automatique</option>
+        </select>
+        <div class="field-hint" id="voiceHint">Chargement des voix disponibles…</div>
+        <div class="reset-link" id="testVoiceBtn" style="margin-top:8px; text-align:left;">🔊 Tester cette voix</div>
+      </div>
+      <div class="field">
+        <label>Sujet / contexte de la conversation</label>
+        <textarea id="topicInput" placeholder="Ex : on prévoit un week-end à Lyon"></textarea>
+      </div>
+      <button class="save-btn" id="saveSettingsBtn">Enregistrer</button>
+      <div class="reset-link" id="resetBtn">Effacer la conversation</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const DEFAULTS = {
+  endpoint: 'http://localhost:11434',
+  model: 'llama3.1',
+  persona: 'Amélie, une barista parisienne de 24 ans, chaleureuse et taquine',
+  level: 'A2',
+  formality: 'tu',
+  topic: 'une conversation de tous les jours, on parle de ce qu\'on a fait ce week-end',
+  voiceName: ''
+};
+
+function loadSettings(){
+  try{
+    const s = JSON.parse(localStorage.getItem('fr_app_settings'));
+    return s ? {...DEFAULTS, ...s} : {...DEFAULTS};
+  }catch(e){ return {...DEFAULTS}; }
+}
+function saveSettings(s){ localStorage.setItem('fr_app_settings', JSON.stringify(s)); }
+function loadHistory(){
+  try{ return JSON.parse(localStorage.getItem('fr_app_history')) || []; }
+  catch(e){ return []; }
+}
+function saveHistory(h){ localStorage.setItem('fr_app_history', JSON.stringify(h)); }
+
+let settings = loadSettings();
+let history = loadHistory(); // [{role:'user'|'assistant', content, corrections?, translation?}]
+
+const messagesEl = document.getElementById('messages');
+const inputEl = document.getElementById('input');
+const sendBtn = document.getElementById('sendBtn');
+const personaNameEl = document.getElementById('personaName');
+const avatarInitialEl = document.getElementById('avatarInitial');
+const levelStatusEl = document.getElementById('levelStatus');
+
+const settingsPanel = document.getElementById('settingsPanel');
+const endpointInput = document.getElementById('endpointInput');
+const modelInput = document.getElementById('modelInput');
+const personaInput = document.getElementById('personaInput');
+const levelInput = document.getElementById('levelInput');
+const formalityInput = document.getElementById('formalityInput');
+const voiceInput = document.getElementById('voiceInput');
+const voiceHint = document.getElementById('voiceHint');
+const testVoiceBtn = document.getElementById('testVoiceBtn');
+const topicInput = document.getElementById('topicInput');
+const connStatus = document.getElementById('connStatus');
+
+function firstName(persona){
+  return (persona.split(',')[0] || persona).trim().split(' ')[0] || 'Ami';
+}
+
+function refreshHeader(){
+  const name = firstName(settings.persona);
+  personaNameEl.textContent = name;
+  avatarInitialEl.textContent = name.charAt(0).toUpperCase();
+  levelStatusEl.textContent = 'niveau ' + settings.level + ' · en ligne';
+}
+
+function populateSettingsForm(){
+  endpointInput.value = settings.endpoint;
+  modelInput.value = settings.model;
+  personaInput.value = settings.persona;
+  levelInput.value = settings.level;
+  formalityInput.value = settings.formality;
+  topicInput.value = settings.topic;
+  populateVoiceOptions();
+}
+
+function buildSystemPrompt(){
+  const levelGuide = {
+    A1: 'Utilise seulement des phrases très simples, un vocabulaire de base, le présent surtout.',
+    A2: 'Utilise des phrases simples et courtes, un vocabulaire courant, passé composé et présent.',
+    B1: 'Utilise des phrases variées, un vocabulaire quotidien plus riche, plusieurs temps verbaux.',
+    B2: 'Utilise un français naturel et nuancé, expressions idiomatiques courantes, tous les temps.',
+    C1: 'Utilise un français riche, familier et naturel, comme un vrai texto entre amis, sans simplifier.'
+  }[settings.level];
+
+  return `Tu es ${settings.persona}. Tu échanges des textos en français avec quelqu'un qui apprend le français (niveau ${settings.level} du CECRL).
+Contexte de la conversation : ${settings.topic}.
+Tutoiement/vouvoiement : utilise "${settings.formality}".
+Style : messages courts et naturels, comme de vrais SMS (pas de formules trop formelles, sauf si le niveau de formalité l'exige).
+${levelGuide}
+
+Ta tâche à CHAQUE tour :
+1. Repère les fautes de grammaire, conjugaison, ou orthographe dans le DERNIER message de l'utilisateur (s'il y en a).
+2. Réponds à l'utilisateur en français, dans le personnage, en continuant la conversation naturellement.
+3. Donne une traduction anglaise concise de ta réponse.
+
+Réponds STRICTEMENT avec un seul objet JSON, sans aucun texte avant ou après, selon ce schéma exact :
+{"reply": "ta réponse en français ici", "corrections": [{"original": "extrait fautif", "corrected": "version corrigée", "explanation": "explication courte en anglais"}], "translation": "traduction anglaise de ta réponse"}
+
+Si l'utilisateur n'a fait aucune faute, "corrections" doit être un tableau vide [].
+Ne mets jamais de texte hors du JSON.`;
+}
+
+const SPEAK_ICON_SVG = `<svg class="speak-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>`;
+
+let frenchVoice = null;
+let frenchVoiceList = [];
+function pickFrenchVoice(){
+  const voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+  if(!voices || voices.length === 0) return null;
+  return voices.find(v => v.lang === 'fr-FR')
+      || voices.find(v => v.lang && v.lang.startsWith('fr'))
+      || null;
+}
+function populateVoiceOptions(){
+  if(!window.speechSynthesis) return;
+  const voices = window.speechSynthesis.getVoices();
+  frenchVoiceList = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith('fr'));
+
+  const current = voiceInput.value;
+  voiceInput.innerHTML = '<option value="">Automatique (meilleure voix disponible)</option>';
+  frenchVoiceList.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v.name;
+    opt.textContent = v.name + ' (' + v.lang + ')' + (v.localService ? '' : ' · en ligne');
+    voiceInput.appendChild(opt);
+  });
+  // restore selection: saved setting first, else whatever was showing
+  voiceInput.value = settings.voiceName || current || '';
+
+  if(frenchVoiceList.length === 0){
+    voiceHint.textContent = "Aucune voix française détectée sur cet appareil. Chrome ajoute souvent des voix en ligne — essaie d'ouvrir cette page dans Chrome, ou installe une voix française via les réglages de ton système (Windows : Paramètres > Heure et langue > Voix).";
+  } else {
+    voiceHint.textContent = frenchVoiceList.length + ' voix française(s) trouvée(s). Choisis-en une puis clique "Tester".';
+  }
+}
+if(window.speechSynthesis){
+  frenchVoice = pickFrenchVoice();
+  window.speechSynthesis.onvoiceschanged = () => {
+    frenchVoice = pickFrenchVoice();
+    populateVoiceOptions();
+  };
+}
+
+function speakFrench(text, bubbleEl){
+  if(!window.speechSynthesis){
+    alert("Ton navigateur ne prend pas en charge la lecture vocale.");
+    return;
+  }
+  window.speechSynthesis.cancel();
+  document.querySelectorAll('.bubble.speaking').forEach(b => b.classList.remove('speaking'));
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'fr-FR';
+  const chosen = settings.voiceName
+    ? window.speechSynthesis.getVoices().find(v => v.name === settings.voiceName)
+    : null;
+  utterance.voice = chosen || frenchVoice || null;
+  utterance.rate = 0.92;
+  if(bubbleEl){
+    bubbleEl.classList.add('speaking');
+    utterance.onend = () => bubbleEl.classList.remove('speaking');
+    utterance.onerror = () => bubbleEl.classList.remove('speaking');
+  }
+  window.speechSynthesis.speak(utterance);
+}
+
+function scrollToBottom(){
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function renderAll(){
+  messagesEl.innerHTML = '';
+  history.forEach(msg => renderMessage(msg));
+  scrollToBottom();
+}
+
+function renderMessage(msg){
+  if(msg.role === 'user'){
+    const row = document.createElement('div');
+    row.className = 'bubble-row sent';
+    row.innerHTML = `<div class="bubble sent">${SPEAK_ICON_SVG}<span class="bubble-text"></span></div>`;
+    const bubbleEl = row.querySelector('.bubble');
+    bubbleEl.querySelector('.bubble-text').textContent = msg.content;
+    bubbleEl.addEventListener('click', () => speakFrench(msg.content, bubbleEl));
+    messagesEl.appendChild(row);
+  } else {
+    if(msg.corrections && msg.corrections.length > 0){
+      const rWrap = document.createElement('div');
+      rWrap.className = 'receipt-wrap';
+      const receipt = document.createElement('div');
+      receipt.className = 'receipt';
+      let inner = `<div class="receipt-title">Petites corrections ✂</div>`;
+      msg.corrections.forEach(c => {
+        inner += `<div class="receipt-item">
+          <span class="orig"></span> → <span class="fix"></span>
+          <span class="note"></span>
+        </div>`;
+      });
+      receipt.innerHTML = inner;
+      const items = receipt.querySelectorAll('.receipt-item');
+      msg.corrections.forEach((c, i) => {
+        items[i].querySelector('.orig').textContent = c.original || '';
+        items[i].querySelector('.fix').textContent = c.corrected || '';
+        items[i].querySelector('.note').textContent = c.explanation || '';
+      });
+      rWrap.appendChild(receipt);
+      messagesEl.appendChild(rWrap);
+    }
+    const row = document.createElement('div');
+    row.className = 'bubble-row received';
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble received';
+    bubble.innerHTML = SPEAK_ICON_SVG + '<span class="bubble-text"></span>';
+    bubble.querySelector('.bubble-text').textContent = msg.content;
+    bubble.addEventListener('click', () => speakFrench(msg.content, bubble));
+    row.appendChild(bubble);
+    messagesEl.appendChild(row);
+
+    if(msg.translation){
+      const trWrap = document.createElement('div');
+      trWrap.className = 'bubble-row received';
+      const tr = document.createElement('div');
+      tr.className = 'translation';
+      tr.textContent = 'Voir la traduction';
+      tr.dataset.shown = 'false';
+      tr.addEventListener('click', () => {
+        if(tr.dataset.shown === 'false'){
+          tr.textContent = msg.translation;
+          tr.dataset.shown = 'true';
+        } else {
+          tr.textContent = 'Voir la traduction';
+          tr.dataset.shown = 'false';
+        }
+      });
+      trWrap.appendChild(tr);
+      messagesEl.appendChild(trWrap);
+    }
+  }
+}
+
+function showTyping(){
+  const row = document.createElement('div');
+  row.className = 'typing-row';
+  row.id = 'typingRow';
+  row.innerHTML = `<div class="typing-dots"><span></span><span></span><span></span></div>`;
+  messagesEl.appendChild(row);
+  scrollToBottom();
+}
+function hideTyping(){
+  const row = document.getElementById('typingRow');
+  if(row) row.remove();
+}
+
+async function sendMessage(){
+  const text = inputEl.value.trim();
+  if(!text) return;
+  inputEl.value = '';
+  inputEl.style.height = 'auto';
+  sendBtn.disabled = true;
+
+  const userMsg = {role:'user', content: text};
+  history.push(userMsg);
+  renderMessage(userMsg);
+  scrollToBottom();
+  saveHistory(history);
+
+  showTyping();
+
+  try{
+    const apiMessages = [{role:'system', content: buildSystemPrompt()}];
+    history.forEach(m => apiMessages.push({role: m.role, content: m.content}));
+
+    const res = await fetch(settings.endpoint.replace(/\/$/, '') + '/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        model: settings.model,
+        messages: apiMessages,
+        format: 'json',
+        stream: false,
+        options: { temperature: 0.7 }
+      })
+    });
+
+    if(!res.ok){
+      throw new Error('Ollama a répondu avec une erreur (' + res.status + ')');
+    }
+
+    const data = await res.json();
+    const raw = data.message && data.message.content ? data.message.content : '';
+    let parsed;
+    try{
+      parsed = JSON.parse(raw);
+    }catch(e){
+      parsed = { reply: raw || "(réponse vide — vérifie ton modèle)", corrections: [], translation: '' };
+    }
+
+    const assistantMsg = {
+      role: 'assistant',
+      content: parsed.reply || '(pas de réponse)',
+      corrections: Array.isArray(parsed.corrections) ? parsed.corrections : [],
+      translation: parsed.translation || ''
+    };
+    history.push(assistantMsg);
+    saveHistory(history);
+    hideTyping();
+    renderMessage(assistantMsg);
+    scrollToBottom();
+
+  }catch(err){
+    hideTyping();
+    const errMsg = {
+      role: 'assistant',
+      content: "Je n'arrive pas à me connecter à Ollama. Vérifie que `ollama serve` tourne et que l'adresse dans les réglages est correcte. (" + err.message + ")",
+      corrections: [],
+      translation: ''
+    };
+    renderMessage(errMsg);
+    scrollToBottom();
+  } finally {
+    sendBtn.disabled = false;
+    inputEl.focus();
+  }
+}
+
+sendBtn.addEventListener('click', sendMessage);
+inputEl.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter' && !e.shiftKey){
+    e.preventDefault();
+    sendMessage();
+  }
+});
+inputEl.addEventListener('input', () => {
+  inputEl.style.height = 'auto';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 90) + 'px';
+});
+
+// settings panel
+document.getElementById('openSettingsBtn').addEventListener('click', () => {
+  populateSettingsForm();
+  connStatus.textContent = '';
+  settingsPanel.hidden = false;
+  checkConnection();
+});
+document.getElementById('closeSettingsBtn').addEventListener('click', () => {
+  settingsPanel.hidden = true;
+});
+document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+  settings = {
+    endpoint: endpointInput.value.trim() || DEFAULTS.endpoint,
+    model: modelInput.value.trim() || DEFAULTS.model,
+    persona: personaInput.value.trim() || DEFAULTS.persona,
+    level: levelInput.value,
+    formality: formalityInput.value,
+    topic: topicInput.value.trim() || DEFAULTS.topic,
+    voiceName: voiceInput.value
+  };
+  saveSettings(settings);
+  refreshHeader();
+  settingsPanel.hidden = true;
+});
+testVoiceBtn.addEventListener('click', () => {
+  const previewVoiceName = voiceInput.value;
+  const chosen = previewVoiceName
+    ? window.speechSynthesis.getVoices().find(v => v.name === previewVoiceName)
+    : frenchVoice;
+  if(!window.speechSynthesis){
+    alert("Ton navigateur ne prend pas en charge la lecture vocale.");
+    return;
+  }
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance("Salut ! Comment ça va aujourd'hui ?");
+  utterance.lang = 'fr-FR';
+  utterance.voice = chosen || null;
+  utterance.rate = 0.92;
+  window.speechSynthesis.speak(utterance);
+});
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if(confirm('Effacer toute la conversation ?')){
+    history = [];
+    saveHistory(history);
+    renderAll();
+    settingsPanel.hidden = true;
+  }
+});
+
+async function checkConnection(){
+  const ep = endpointInput.value.trim() || DEFAULTS.endpoint;
+  connStatus.textContent = 'Vérification…';
+  connStatus.className = 'conn-status';
+  try{
+    const res = await fetch(ep.replace(/\/$/, '') + '/api/tags');
+    if(res.ok){
+      const data = await res.json();
+      const names = (data.models || []).map(m => m.name).join(', ') || '(aucun modèle installé)';
+      connStatus.textContent = '✓ Connecté — modèles disponibles : ' + names;
+      connStatus.className = 'conn-status ok';
+    } else {
+      connStatus.textContent = '✗ Ollama a répondu avec une erreur.';
+      connStatus.className = 'conn-status bad';
+    }
+  }catch(e){
+    connStatus.textContent = '✗ Impossible de joindre Ollama à cette adresse.';
+    connStatus.className = 'conn-status bad';
+  }
+}
+endpointInput.addEventListener('change', checkConnection);
+
+// init
+refreshHeader();
+if(history.length === 0){
+  history.push({
+    role: 'assistant',
+    content: 'Coucou ! Ça va ? 😊',
+    corrections: [],
+    translation: "Hey! How's it going?"
+  });
+  saveHistory(history);
+}
+renderAll();
+</script>
+
+</body>
+</html>
