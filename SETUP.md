@@ -9,7 +9,7 @@ Download and install from **https://ollama.com** (Mac, Windows, or Linux).
 Open a terminal and run one of these (first pull downloads the model, a few GB):
 
 ```
-ollama pull llama3.1
+ollama pull qwen2.5:7b
 ```
 
 Other good options for French: `mistral`, `qwen2.5:7b` (qwen2.5 is particularly strong at multilingual/French).
@@ -30,10 +30,11 @@ $env:OLLAMA_ORIGINS="*"; ollama serve
 If Ollama is already running as a background service, quit it first (check your menu bar / system tray) so this command can take over on port 11434.
 
 ## 4. Run the app
-The app is a single `index.html` file, but for the browser to load fonts/fetch correctly, serve it from a local web server instead of double-clicking it:
+The app is a single `index.html` file, but for the browser to load fonts/fetch correctly.
+In your terminal, navigate to where the index.html file was downloaded, probably your downloads folder and then run the python3 command as shown below:
 
 ```
-cd path/to/french-texting-app
+cd path/to/index.html
 python3 -m http.server 8000
 ```
 
@@ -42,7 +43,7 @@ Then open **http://localhost:8000** in your browser.
 ## 5. First-time setup in the app
 Tap the gear icon (top right) and check:
 - **Ollama address**: `http://localhost:11434`
-- **Model**: match whatever you pulled, e.g. `llama3.1`
+- **Model**: match whatever you pulled, e.g. `qwen2.5:7b`
 - It'll show a green "✓ Connecté" if everything's wired up correctly.
 
 From there, set your level (A1–C1), tu/vous, and a conversation topic or persona (e.g. "Amélie, a Parisian barista" or "Léo, your chatty college friend"), then just start texting in French.
